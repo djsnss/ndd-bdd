@@ -10,21 +10,83 @@ type BloodDrop = {
   delay: number;
 };
 
+// Type for confetti particle
+type Confetti = {
+  id: string;
+  x: number;
+  y: number;
+  color: string;
+  shape: "circle" | "square" | "triangle" | "heart";
+  size: number;
+  tilt: number;
+  speed: number;
+  delay: number;
+};
+
+// New type for donor information
+type Donor = {
+  name: string;
+  // timestamp: string;
+};
+
 export default function Home(): JSX.Element {
   const [totalDonations, setTotalDonations] = useState<number>(230);
+  const [previousDonations, setPreviousDonations] = useState<number>(230);
   const [donorCount, setDonorCount] = useState<number>(48);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [drops, setDrops] = useState<BloodDrop[]>([]);
+  const [confetti, setConfetti] = useState<Confetti[]>([]);
+  const [showCelebrationText, setShowCelebrationText] = useState<boolean>(false);
+  const [recentDonors, setRecentDonors] = useState<Donor[]>([
+    { name: "Jane Doe" },
+    { name: "John Smith" },
+    { name: "Alice Johnson" },
+    { name: "Bob Brown" },
+    { name: "Eve White" },
+    { name: "Charlie Black" },
+    { name: "Grace Green" },
+    { name: "Harry Blue" },
+    { name: "Ivy Red" },
+    { name: "Kevin Orange" },
+  ]);
+  const [latestDonor, setLatestDonor] = useState<Donor | null>({
+    name: "John Doe",
+  });
 
   const MAX_DONATIONS: number = 1000;
   const fillPercentage: number = (totalDonations / MAX_DONATIONS) * 100;
+  const CONFETTI_COLORS = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93", "#f15bb5", "#e53170"];
 
   useEffect(() => {
     async function loadStats() {
-      handleNewDonation();
       const stats = await fetch("/api/donationStats").then((res) => res.json());
+      
+      // Check if total donations has increased
+      if (stats.units > totalDonations) {
+        // Save previous donation value before updating
+        setPreviousDonations(totalDonations);
+        
+        // Update the donation count
+        setTotalDonations(stats.units);
+        
+        // Trigger animations
+        handleNewDonation();
+        launchConfettiCelebration();
+        
+        // Show the celebration text
+        setShowCelebrationText(true);
+        setTimeout(() => setShowCelebrationText(false), 4000);
+      } else {
+        setTotalDonations(stats.units);
+      }
+      
       setDonorCount(stats.donors);
-      setTotalDonations(stats.units);
+      
+      // Set recent donors and latest donor from API response
+      if (stats.recentDonors && stats.recentDonors.length > 0) {
+        setRecentDonors(stats.recentDonors.slice(0, 5));
+        setLatestDonor(stats.recentDonors[0]);
+      }
     }
     loadStats();
 
@@ -33,7 +95,7 @@ export default function Home(): JSX.Element {
 
     // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
-  }, []);
+  }, [totalDonations]);
 
   const handleNewDonation = (): void => {
     if (totalDonations < MAX_DONATIONS) {
@@ -65,11 +127,101 @@ export default function Home(): JSX.Element {
     }
   };
 
+  const launchConfettiCelebration = (): void => {
+    // Generate a large number of confetti particles (150-200)
+    const confettiCount = Math.floor(Math.random() * 50) + 150;
+    const newConfetti: Confetti[] = [];
+    
+    // Shapes array for variety
+    const shapes: ("circle" | "square" | "triangle" | "heart")[] = ["circle", "square", "triangle", "heart"];
+    
+    for (let i = 0; i < confettiCount; i++) {
+      newConfetti.push({
+        id: `confetti-${Math.random()}-${i}`,
+        x: Math.random() * 100, // Position across the full width
+        y: Math.random() * 20 - 10, // Start slightly above the top
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        shape: shapes[Math.floor(Math.random() * shapes.length)],
+        size: Math.random() * 0.4 + 0.4, // Size between 0.4 and 0.8rem
+        tilt: Math.random() * 40 - 20, // Tilt between -20 and 20 degrees
+        speed: Math.random() * 2 + 3, // Fall speed
+        delay: Math.random() * 0.5 // Slight delay for more natural effect
+      });
+    }
+    
+    setConfetti(newConfetti);
+    
+    // Clear confetti after animation completes
+    setTimeout(() => {
+      setConfetti([]);
+    }, 6000);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-50 via-white to-red-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-b from-red-50 via-white to-red-50 p-4 md:p-8 relative overflow-hidden">
+      {/* Confetti container - positioned absolute to cover the whole page */}
+      <div className="fixed inset-0 pointer-events-none z-50">
+        {confetti.map((particle) => {
+          let shapeElement;
+          
+          // Create different shapes based on the shape property
+          switch(particle.shape) {
+            case "square":
+              shapeElement = <div className="w-full h-full bg-current rounded-sm" />;
+              break;
+            case "triangle":
+              shapeElement = (
+                <div className="w-0 h-0 border-l-[0.5rem] border-r-[0.5rem] border-b-[0.8rem] border-l-transparent border-r-transparent border-b-current" />
+              );
+              break;
+            case "heart":
+              shapeElement = (
+                <div className="text-current" style={{ fontSize: `${particle.size * 1.5}rem` }}>❤️</div>
+              );
+              break;
+            case "circle":
+            default:
+              shapeElement = <div className="w-full h-full bg-current rounded-full" />;
+          }
+          
+          return (
+            <div
+              key={particle.id}
+              className="absolute confetti"
+              style={{
+                left: `${particle.x}%`,
+                top: `-20px`,
+                width: `${particle.size}rem`,
+                height: `${particle.size}rem`,
+                color: particle.color,
+                animationDuration: `${particle.speed}s`,
+                animationDelay: `${particle.delay}s`,
+                transform: `rotate(${particle.tilt}deg)`,
+              }}
+            >
+              {shapeElement}
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Celebration text overlay - shows when donation increases */}
+      {showCelebrationText && (
+        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-40">
+          <div className="celebration-text bg-white bg-opacity-80 px-8 py-4 rounded-2xl shadow-lg transform">
+            <p className="text-3xl md:text-5xl font-bold text-red-600 text-center">
+              +{totalDonations - previousDonations} Donations!
+            </p>
+            <p className="text-xl md:text-2xl text-red-800 text-center mt-2">
+              Thank you for saving lives! 🩸
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto">
         {/* Header with logo */}
-        <header className="text-center mb-12">
+        <header className="text-center mb-6">
           <div className="inline-block p-4 bg-red-600 rounded-full mb-6 shadow-lg">
             <Heart className="h-12 w-12 text-white" />
           </div>
@@ -78,15 +230,24 @@ export default function Home(): JSX.Element {
           </h1>
           <div className="h-1 w-32 bg-red-600 mx-auto mb-6"></div>
           <p className="text-lg text-gray-700 max-w-2xl mx-auto">
-            Join our life-saving mission to collect 1,000 units of blood. Every
+            Join our life-saving mission to collect blood. Every
             drop counts. Every donor matters.
           </p>
         </header>
 
+        {/* Latest donor notification */}
+        {latestDonor && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-center">
+            <p className="text-green-600 font-bold">
+              {latestDonor.name} just saved 3 lives!
+            </p>
+          </div>
+        )}
+
         {/* Main content */}
         <div className="flex flex-col lg:flex-row space-y-8 lg:space-y-0 lg:space-x-8">
           {/* Left column - Stats */}
-          <div className="lg:w-1/4 space-y-6">
+          <div className="lg:w-1/4 content-center space-y-6">
             <div className="bg-white rounded-xl shadow-md p-6 border border-red-100">
               <h2 className="text-xl font-bold text-red-800 mb-4 flex items-center">
                 <Award className="mr-2 h-5 w-5" />
@@ -123,39 +284,24 @@ export default function Home(): JSX.Element {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6 border border-red-100">
-              <h2 className="text-xl font-bold text-red-800 mb-4 flex items-center">
-                <Calendar className="mr-2 h-5 w-5" />
-                Next Drive
-              </h2>
-              <div className="space-y-3">
-                <div className="flex items-center text-gray-700">
-                  <Calendar className="h-4 w-4 mr-2 text-red-600" />
-                  <span>March 10, 2025</span>
-                </div>
-                <div className="flex items-center text-gray-700">
-                  <Clock className="h-4 w-4 mr-2 text-red-600" />
-                  <span>9:00 AM - 4:00 PM</span>
-                </div>
-                <div className="mt-4">
-                  <button className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
-                    Register Now
-                  </button>
-                </div>
-              </div>
+            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-xl shadow-lg p-6 text-white">
+              <h2 className="text-xl font-bold mb-3">Become a Hero</h2>
+              <p className="opacity-90">
+                Every 2 seconds, someone in our community needs blood. Your
+                donation makes a life-saving difference.
+              </p>
             </div>
           </div>
 
           {/* Center column - Flask */}
-          <div className="lg:w-1/2">
+          <div className="lg:w-1/2">            
             <div className="bg-white rounded-xl shadow-lg border border-red-100 p-6 flex flex-col h-full">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold text-red-800">
                   Blood Collection Progress
                 </h2>
                 <p className="text-gray-600">
-                  {totalDonations} of {MAX_DONATIONS} units collected (
-                  {Math.round(fillPercentage)}%)
+                  {totalDonations} units collected
                 </p>
 
                 {/* Progress bar */}
@@ -168,7 +314,7 @@ export default function Home(): JSX.Element {
               </div>
 
               <div className="flex items-center justify-center relative">
-                {/* NEW: Bigger Flask with exact shape clipping */}
+                {/* Flask with SVG clipping */}
                 <div className="flex justify-center w-full max-w-md mx-auto">
                   <div className="relative">
                     <svg 
@@ -264,7 +410,16 @@ export default function Home(): JSX.Element {
 
               <div className="text-center">
                 <button
-                  onClick={handleNewDonation}
+                  onClick={() => {
+                    // Set previous donations to current before updating
+                    setPreviousDonations(totalDonations);
+                    // Simulate a new donation (add 5 units)
+                    setTotalDonations(prev => prev + 5);
+                    handleNewDonation();
+                    launchConfettiCelebration();
+                    setShowCelebrationText(true);
+                    setTimeout(() => setShowCelebrationText(false), 4000);
+                  }}
                   className={`
                     px-8 py-3 rounded-full font-semibold text-lg shadow-md transition-all 
                     transform hover:scale-105 active:scale-95 
@@ -285,64 +440,30 @@ export default function Home(): JSX.Element {
           </div>
 
           {/* Right column - Info */}
-          <div className="lg:w-1/4 space-y-6">
+          <div className="lg:w-1/4 content-center space-y-6">
+            {/* New section for recent donors */}
             <div className="bg-white rounded-xl shadow-md p-6 border border-red-100">
-              <h2 className="text-xl font-bold text-red-800 mb-4">
-                Why Donate?
+              <h2 className="text-xl font-bold text-red-800 mb-4 flex items-center">
+                <Users className="mr-2 h-5 w-5" />
+                Recent Donors
               </h2>
-              <ul className="space-y-3">
-                <li className="flex items-start">
-                  <div className="flex-shrink-0 h-5 w-5 rounded-full bg-red-100 flex items-center justify-center mt-0.5">
-                    <span className="text-red-600 text-xs font-bold">1</span>
-                  </div>
-                  <span className="ml-2 text-gray-700">
-                    One donation can save up to 3 lives
-                  </span>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0 h-5 w-5 rounded-full bg-red-100 flex items-center justify-center mt-0.5">
-                    <span className="text-red-600 text-xs font-bold">2</span>
-                  </div>
-                  <span className="ml-2 text-gray-700">
-                    Blood is needed every 2 seconds
-                  </span>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0 h-5 w-5 rounded-full bg-red-100 flex items-center justify-center mt-0.5">
-                    <span className="text-red-600 text-xs font-bold">3</span>
-                  </div>
-                  <span className="ml-2 text-gray-700">
-                    Only 3% of eligible people donate
-                  </span>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0 h-5 w-5 rounded-full bg-red-100 flex items-center justify-center mt-0.5">
-                    <span className="text-red-600 text-xs font-bold">4</span>
-                  </div>
-                  <span className="ml-2 text-gray-700">
-                    Your body replaces blood volume within 24 hours
-                  </span>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0 h-5 w-5 rounded-full bg-red-100 flex items-center justify-center mt-0.5">
-                    <span className="text-red-600 text-xs font-bold">5</span>
-                  </div>
-                  <span className="ml-2 text-gray-700">
-                    Most donations take less than an hour
-                  </span>
-                </li>
+              <ul className="space-y-3 text-gray-700">
+                {recentDonors.length > 0 ? (
+                  recentDonors.map((donor, index) => (
+                    <li key={index} className="flex items-center">
+                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                        <Heart className="h-4 w-4 text-red-600" />
+                      </div>
+                      <div className="ml-3">
+                        <p className="font-medium">{donor.name}</p>
+                        {/* <p className="text-xs text-gray-500">{new Date(donor.timestamp).toLocaleString()}</p> */}
+                      </div>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-500 italic">No recent donors</li>
+                )}
               </ul>
-            </div>
-
-            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-xl shadow-lg p-6 text-white">
-              <h2 className="text-xl font-bold mb-3">Become a Hero</h2>
-              <p className="mb-4 opacity-90">
-                Every 2 seconds, someone in our community needs blood. Your
-                donation makes a life-saving difference.
-              </p>
-              <button className="w-full bg-white hover:bg-gray-100 text-red-600 py-2 px-4 rounded-lg font-medium transition-colors">
-                Learn More
-              </button>
             </div>
           </div>
         </div>
@@ -374,6 +495,42 @@ export default function Home(): JSX.Element {
 
         .animate-bubble {
           animation: bubbleAnimation 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+
+        .animate-pulse {
+          animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes celebrationTextAnimation {
+          0% { 
+            transform: scale(0.8); 
+            opacity: 0;
+          }
+          10% {
+            transform: scale(1.1);
+            opacity: 1;
+          }
+          20% {
+            transform: scale(1);
+          }
+          80% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(0.9);
+            opacity: 0;
+          }
+        }
+        
+        .celebration-text {
+          animation: celebrationTextAnimation 4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          will-change: transform, opacity;
         }
       `}</style>
     </div>

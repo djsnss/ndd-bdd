@@ -26,7 +26,7 @@ export const FlaskStatic = React.memo(() => {
       width="250"
       height="350"
       viewBox="3 2 18 20"
-      className="text-gray-400"
+      className="text-indigo-400"
     >
       <defs>
         <clipPath id="flaskClip">
