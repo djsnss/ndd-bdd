@@ -25,12 +25,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Exclude the header row
       const donorRows = rows.slice(1);
       // Filter non-empty cells
-      const filteredDonorRows = donorRows.filter(row => row[0] && row[0].trim() !== '');
+      const filteredDonorRows = donorRows.filter((row: string[]) => row[0] && row[0].trim() !== '');
       const donorsCount = filteredDonorRows.length;
       const unitsCount = donorsCount * 3.5;
 
       // Get the 10 latest donors (assuming latest entries are at the bottom)
-      const recentDonors = filteredDonorRows.slice(-10).map(row => ({ name: row[0].trim() }));
+      const recentDonors = filteredDonorRows.slice(-10).map((row: string[]) => ({ name: row[0].trim() }));
 
       res.status(200).json({
         donors: donorsCount,
