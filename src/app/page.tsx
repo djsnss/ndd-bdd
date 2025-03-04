@@ -71,8 +71,8 @@ export default function Home(): JSX.Element {
       
       // Set recent donors and latest donor from API response
       if (stats.recentDonors && stats.recentDonors.length > 0) {
-        setRecentDonors(stats.recentDonors);
-        setLatestDonor(stats.recentDonors[stats.recentDonors.length - 1]);
+        setRecentDonors(stats.recentDonors.reverse());
+        setLatestDonor(stats.recentDonors[0]);
       }
     }
     loadStats();
