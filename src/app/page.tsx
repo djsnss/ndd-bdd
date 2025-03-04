@@ -37,21 +37,8 @@ export default function Home(): JSX.Element {
   const [drops, setDrops] = useState<BloodDrop[]>([]);
   const [confetti, setConfetti] = useState<Confetti[]>([]);
   const [showCelebrationText, setShowCelebrationText] = useState<boolean>(false);
-  const [recentDonors, setRecentDonors] = useState<Donor[]>([
-    { name: "Jane Doe" },
-    { name: "John Smith" },
-    { name: "Alice Johnson" },
-    { name: "Bob Brown" },
-    { name: "Eve White" },
-    { name: "Charlie Black" },
-    { name: "Grace Green" },
-    { name: "Harry Blue" },
-    { name: "Ivy Red" },
-    { name: "Kevin Orange" },
-  ]);
-  const [latestDonor, setLatestDonor] = useState<Donor | null>({
-    name: "John Doe",
-  });
+  const [recentDonors, setRecentDonors] = useState<Donor[]>([]);
+  const [latestDonor, setLatestDonor] = useState<Donor | null>();
 
   const MAX_DONATIONS: number = 1000;
   const fillPercentage: number = (totalDonations / MAX_DONATIONS) * 100;
@@ -84,8 +71,8 @@ export default function Home(): JSX.Element {
       
       // Set recent donors and latest donor from API response
       if (stats.recentDonors && stats.recentDonors.length > 0) {
-        setRecentDonors(stats.recentDonors.slice(0, 5));
-        setLatestDonor(stats.recentDonors[0]);
+        setRecentDonors(stats.recentDonors);
+        setLatestDonor(stats.recentDonors[stats.recentDonors.length - 1]);
       }
     }
     loadStats();

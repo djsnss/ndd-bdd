@@ -56,7 +56,7 @@ body {
   100% { background-position: 28px 0; }
 }
 
-        
+
 @keyframes confettiFall {
   0% { 
     transform: translateY(0) rotate(0deg); 

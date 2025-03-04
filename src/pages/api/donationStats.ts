@@ -1,18 +1,15 @@
 // pages/api/donationStats.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-// Replace these with your actual Google Sheets values
-const SPREADSHEET_ID = `${process.env.SPREADSHEET_ID}`;
-const API_KEY = `${process.env.GOOGLE_SHEETS_API_KEY}`;
-// Example cell references. Adjust these based on where the data lives in your sheet.
-const DONORS_CELL = `${process.env.DONORS_CELL}`;
-const UNITS_CELL = `${process.env.UNITS_CELL}`;
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+const API_KEY = process.env.GOOGLE_SHEETS_API_KEY;
+// Cell range for column B (adjust if needed)
+const DONORS_CELL = "Form Responses 1!B:B";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Construct the URL for the batchGet request
+  // Construct the URL for the batchGet request using the donors range
   const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchGet?key=${API_KEY}`;
-  // Encode the ranges in case they contain special characters
-  const ranges = `&ranges=${encodeURIComponent(DONORS_CELL)}&ranges=${encodeURIComponent(UNITS_CELL)}`;
+  const ranges = `&ranges=${encodeURIComponent(DONORS_CELL)}`;
   const url = endpoint + ranges;
 
   try {
@@ -23,21 +20,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const data = await response.json();
 
-    // Ensure that we have at least two valueRanges returned
-    if (data.valueRanges && data.valueRanges.length >= 2) {
-      const donorsValue = data.valueRanges[0].values?.[0]?.[0];
-      const unitsValue = data.valueRanges[1].values?.[0]?.[0];
+    if (data.valueRanges && data.valueRanges.length >= 1) {
+      const rows = data.valueRanges[0].values || [];
+      // Exclude the header row
+      const donorRows = rows.slice(1);
+      // Filter non-empty cells
+      const filteredDonorRows = donorRows.filter(row => row[0] && row[0].trim() !== '');
+      const donorsCount = filteredDonorRows.length;
+      const unitsCount = donorsCount * 3.5;
+
+      // Get the 10 latest donors (assuming latest entries are at the bottom)
+      const recentDonors = filteredDonorRows.slice(-10).map(row => ({ name: row[0].trim() }));
 
       res.status(200).json({
-        donors: Number(donorsValue),
-        units: Number(unitsValue),
+        donors: donorsCount,
+        units: unitsCount,
+        recentDonors,
       });
       return;
     }
-    // Fallback if data isn't structured as expected
-    res.status(200).json({ donors: 0, units: 0 });
+    res.status(200).json({ donors: 0, units: 0, recentDonors: [] });
   } catch (error) {
     console.error('Error fetching donation stats:', error);
-    res.status(500).json({ donors: 0, units: 0 });
+    res.status(500).json({ donors: 0, units: 0, recentDonors: [] });
   }
 }
