@@ -42,7 +42,7 @@ export default function Home (): JSX.Element {
   const [recentDonors, setRecentDonors] = useState<Donor[]>([])
   const [latestDonor, setLatestDonor] = useState<Donor | null>()
 
-  const MAX_DONATIONS: number = 500
+  const MAX_DONATIONS: number = 1000
   const fillPercentage: number = (totalDonations / MAX_DONATIONS) * 100
   const CONFETTI_COLORS = [
     '#ff595e',
