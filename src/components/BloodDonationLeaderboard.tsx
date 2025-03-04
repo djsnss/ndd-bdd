@@ -112,10 +112,6 @@ export function BloodDonationLeaderboard () {
           className='object-contain transform scale-x-[-1]'
         />
       </div>
-      <div className='text-center text-2xl text-red-700 font-bold mb-6'>
-        <strong>Total: </strong>{' '}
-        {targetScores.reduce((acc, score) => acc + score, 0)}
-      </div>
       {/* Leaderboard bars */}
       <div className='space-y-8'>
         {departmentData.map((dept, index) => {
