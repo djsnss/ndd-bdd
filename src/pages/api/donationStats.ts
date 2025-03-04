@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Filter non-empty cells
       const filteredDonorRows = donorRows.filter((row: string[]) => row[0] && row[0].trim() !== '');
       const donorsCount = filteredDonorRows.length;
-      const unitsCount = donorsCount * 3.5;
+      const unitsCount = donorsCount * 1; // Assuming 1 unit per donor
 
       // Get the 10 latest donors (assuming latest entries are at the bottom)
       const recentDonors = filteredDonorRows.slice(-10).map((row: string[]) => ({ name: row[0].trim() }));
