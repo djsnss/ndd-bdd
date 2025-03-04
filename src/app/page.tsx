@@ -272,30 +272,16 @@ export default function Home (): JSX.Element {
               <div className='space-y-4'>
                 <div className='flex justify-between items-center border-b border-gray-100 pb-3'>
                   <span className='flex items-center text-gray-700'>
-                    <Users className='h-5 w-5 mr-2 text-red-600' />
-                    Donors
-                  </span>
-                  <span className='font-bold text-xl text-gray-800'>
-                    {donorCount}
-                  </span>
-                </div>
-                <div className='flex justify-between items-center border-b border-gray-100 pb-3'>
-                  <span className='flex items-center text-gray-700'>
-                    <Droplet className='h-5 w-5 mr-2 text-red-600' />
-                    Units
-                  </span>
-                  <span className='font-bold text-xl text-gray-800'>
-                    {totalDonations}
+                    <Users className='h-[50px] w-[50px] mr-2 text-red-600' />
+                    Donors help 3 lives each (on average) with 1 unit of blood
                   </span>
                 </div>
                 <div className='flex justify-between items-center'>
                   <span className='flex items-center text-gray-700'>
                     <Heart className='h-5 w-5 mr-2 text-red-600' />
-                    Lives Saved
+                    Blood Given
                   </span>
-                  <span className='font-bold text-xl text-gray-800'>
-                    ~{Math.floor(totalDonations * 3)}
-                  </span>
+                  <strong className='text-amber-600'>= lives saved</strong>
                 </div>
               </div>
             </div>
@@ -316,9 +302,6 @@ export default function Home (): JSX.Element {
                 <h2 className='text-2xl font-bold text-red-800'>
                   Blood Collection Progress
                 </h2>
-                <p className='text-gray-600'>
-                  {totalDonations} units collected
-                </p>
 
                 {/* Progress bar */}
                 <div className='w-full bg-gray-200 rounded-full h-2.5 mt-2'>
